@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="myApp">
+<head>
+    <meta charset="UTF-8">
+    <title>My Contacts</title>
+    <script src="bower_components/angular/angular.js"></script>
+    <script src="bower_components/jquery/dist/jquery.js"></script>
+    <script src="bower_components/bootstrap/dist/js/bootstrap.js"></script>
+
+    <link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="stylesheets/bootstrap-responsive.min.css"/>
+    <style>
+        body{
+            padding: 0px;
+            font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+        }
+        header{
+            width:100%;
+            background: #ff8f73;
+            height:100px;
+            text-align:left;
+            padding:10px 40px;
+            color: white;
+        }
+
+        footer{
+            width:100%;
+            background: #ff8f73;
+            height:50px;
+            padding:1px 50px;
+            text-align: center;
+            color: white;
+
+        }
+
+        ul{
+            list-style-type: none;
+        }
+
+    </style>
+    <script>
+        var myApp = angular.module('myApp',[]);
+
+        myApp.controller('mainController', function($scope, $http, $rootScope, $filter){
+            $scope.newRecord = 1;
+
+            $scope.createNewUser = function(){
+                $scope.contact;
+                $scope.newRecord = 1;
+            }
+
+            $scope.save = function(){
+                if($scope.contact == undefined){
+                }
+                else if($scope.newRecord == 0){
+                    $http.put('/contacts', $scope.contact).then(function(results){
+
+                        var userIndex = $scope.contactlist.indexOf(results.data._id);
+                        $scope.contactlist[userIndex] = results.data
+                        $scope.contact = undefined;
+                    })
+                }
+                else {
+                    console.log($scope.contact);
+                    $http.post('/contacts', $scope.contact).then(function(results){
+                        console.log(results);
+                        $scope.contactlist.push(results.data);
+                        $scope.contact = undefined;
+                    })
+                }
+            }
+
+            $http.get('/contacts').then(function(result){
+                $scope.contactlist = result.data;
+               // console.log(result.data);
+            });
+
+            $scope.editUser = function(user){
+                $scope.newRecord = 0;
+                $scope.contact = user;
+            }
+
+            $scope.deleteUser = function(userid){
+
+                $http.delete('/contacts/' + userid).then(function(results){
+                    //var userIndex = $scope.contactlist.indexOf(userid);
+                    // $scope.contactlist.splice(userIndex, 1);    having issues with splice
+                    $scope.contactlist = $filter('filter')($scope.contactlist , { _id: ('!' + results.data._id) });
+                })
+            }
+
+            $scope.cancel = function(){
+                $scope.newRecord = 0;
+                $scope.contact = undefined;
+            }
+
+        })
+
+
+    </script>
+</head>
+<body>
+<header>
+    <h1>My Contacts</h1>
+</header>
+<main>
+    <div class="row"  ng-controller="mainController">
+        <div class="col-lg">
+
+                <div class="row">
+
+                    <div class="col-sm-4">
+                        <div class="control-group">
+                            <div class="controls" align="right">
+                                <a ng-click="createNewUser()" class="btn btn-small btn-primary">+ New</a>
+                            </div>
+                        </div>
+                        <div class="control-group" align="right"><br>
+                            <ul  ng-repeat="user in contactlist">
+                                <li>
+                                    <label class="control-label">{{user.firstname}} {{user.lastname}}</label>
+                                    <a ng-click="editUser(user)" class="btn btn-small btn-primary">Edit</a> <a ng-click="deleteUser(user._id)" class="btn btn-small btn-primary">Delete</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-sm-8">
+                        <form novalidate="novalidate" class="form-horizontal" name="myForm">
+
+                            <div class="control-group">
+
+                                <label class="control-label" for="inputFirstName">First name:</label>
+                                <div class="controls">
+                                    <input type="text" id="inputFirstName" name="inputFirstName" ng-model="contact.firstname" placeholder="Enter First Name"   required />
+                                </div>
+                            </div>
+
+                            <div class="control-group">
+                                <label class="control-label">Last name:</label>
+
+                                <div class="controls">
+                                    <input type="text" id="inputLastName" name="inputLastName"  ng-model="contact.lastname" placeholder="Enter Last Name"   required/>
+                                </div>
+                            </div>
+                            <div class="control-group">
+                                <label class="control-label">Birth Day:</label>
+
+                                <div class="controls">
+                                    <input type="text" id="inputbirthday" ng-model="contact.birthday" placeholder="DD/MM/YYYY"/>
+                                </div>
+                            </div>
+                            <div class="control-group">
+                                <label class="control-label" for="inputLastName">Company:</label>
+
+                                <div class="controls">
+                                    <input type="text" id="inputcompany"  ng-model="contact.companyname" placeholder="Enter Company"/>
+                                </div>
+                            </div>
+                            <div class="control-group">
+                                <label class="control-label" >Email Address:</label>
+
+                                <div class="controls">
+                                    <input type="text" id="inputemailaddress" ng-model="contact.emailaddress" placeholder="example@domain.com"/>
+                                </div>
+                            </div>
+                            <div class="control-group">
+                                <label class="control-label" >Mobile Number:</label>
+
+                                <div class="controls">
+                                    <input type="text" id="inputmobilenumber"  ng-model="contact.mobilenumber" placeholder="000-000-0000"/>
+                                </div>
+                            </div>
+                            <a ng-click="save()" class="btn btn-small btn-primary"  ng-disabled="myForm.inputFirstName.$dirty && myForm.inputFirstName.$invalid ||
+                       myForm.inputLastName.$dirty && myForm.inputLastName.$invalid">Save</a>
+                            <a ng-click="cancel()" class="btn btn-small btn-primary">Cancel</a>
+                        </form>
+                    </div>
+                </div>
+
+
+
+
+        </div>
+    </div>
+</main>
+<footer>
+    <h3>Footer</h3>
+</footer>
+</body>
+</html>
